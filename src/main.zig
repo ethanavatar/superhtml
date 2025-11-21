@@ -29,14 +29,41 @@ pub fn panic(
     ret_addr: ?usize,
 ) noreturn {
     if (lsp_mode) {
-        std.log.err("\n{s}\n\n{?f}", .{ msg, trace });
+        var allocating_writer = std.Io.Writer.Allocating.init(std.heap.page_allocator);
+        defer allocating_writer.deinit();
+
+        var log_writer = &allocating_writer.writer;
+        log_writer.print("\n{s}\n\n", .{ msg }) catch {};
+
+        if (trace) |non_null_trace| {
+            const trace_fmt = std.debug.FormatStackTrace{
+                .stack_trace = non_null_trace.*,
+                .tty_config = std.Io.tty.Config.detect(std.fs.File.stderr()),
+            };
+            trace_fmt.format(log_writer) catch {};
+
+        } else {
+            log_writer.print("Unable to dump stack trace: stack trace was null\n", .{ }) catch {};
+        }
     }
 
     blk: {
         const out: std.fs.File = if (!lsp_mode) std.fs.File.stderr() else logging.log_file orelse break :blk;
         var writer = out.writerStreaming(&.{});
         const w = &writer.interface;
-        w.print("\n{s}\n\n{?f}", .{ msg, trace }) catch {};
+
+        w.print("\n{s}\n\n", .{ msg }) catch {};
+        if (trace) |non_null_trace| {
+            const trace_fmt = std.debug.FormatStackTrace{
+                .stack_trace = non_null_trace.*,
+                .tty_config = std.Io.tty.Config.detect(std.fs.File.stderr()),
+            };
+            trace_fmt.format(w) catch {};
+
+        } else {
+            w.print("Unable to dump stack trace: stack trace was null\n", .{ }) catch {};
+        }
+
         if (builtin.strip_debug_info) {
             w.print("Unable to dump stack trace: debug info stripped\n", .{}) catch {};
             break :blk;
@@ -80,10 +107,15 @@ pub fn main() !void {
 
     if (cmd == .lsp) lsp_mode = true;
 
+    var threaded: std.Io.Threaded = .init(gpa);
+    defer threaded.deinit();
+
+    const io = threaded.io();
+
     _ = switch (cmd) {
-        .check => check_exe.run(gpa, args[2..]),
-        .fmt => fmt_exe.run(gpa, args[2..]),
-        .lsp => lsp_exe.run(gpa, args[2..]),
+        .check => check_exe.run(gpa, io, args[2..]),
+        .fmt => fmt_exe.run(gpa, io, args[2..]),
+        .lsp => lsp_exe.run(gpa, io, args[2..]),
         .help => fatalHelp(),
         .version => printVersion(),
     } catch |err| fatal("unexpected error: {t}\n", .{err});

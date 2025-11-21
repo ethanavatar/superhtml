@@ -13,8 +13,8 @@
             .hash = "tracy-0.0.0-4Xw-1pwwAABTfMgoDP1unCbZDZhJEfict7XCBGF6IdIn",
         },
         .lsp_kit = .{
-            .url = "git+https://github.com/zigtools/lsp-kit#fe98e895ca3bd1b39965ab30f0f252f7b7e83ee6",
-            .hash = "lsp_kit-0.1.0-bi_PLzAyCgClDh8_M0U9Q50ysdsQBuRuBTZfwg6rZPd6",
+            .url = "git+https://github.com/zigtools/lsp-kit.git#7c4578feceb23d3bec0b4ffa5cd95c9ab54fb719",
+            .hash = "lsp_kit-0.1.0-bi_PL3ovDAC7I8o8EfDmBdPnYdebO3cO-kbg-iy1gpKM",
         },
         .scripty = .{
             .url = "git+https://github.com/kristoff-it/scripty#50dbab8945440089384f26ec165d870c29555247",

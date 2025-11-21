@@ -4,12 +4,12 @@ const super = @import("superhtml");
 
 const FileType = enum { html, super };
 
-pub fn run(gpa: std.mem.Allocator, args: []const []const u8) !noreturn {
+pub fn run(gpa: std.mem.Allocator, io: std.Io, args: []const []const u8) !noreturn {
     const cmd = Command.parse(args);
     var any_error = false;
     switch (cmd.mode) {
         .stdin => {
-            var fr = std.fs.File.stdin().reader(&.{});
+            var fr = std.fs.File.stdin().reader(io, &.{});
             var aw: std.Io.Writer.Allocating = .init(gpa);
             _ = try fr.interface.streamRemaining(&aw.writer);
             const in_bytes = try aw.toOwnedSliceSentinel(0);
@@ -17,7 +17,7 @@ pub fn run(gpa: std.mem.Allocator, args: []const []const u8) !noreturn {
             try checkHtml(gpa, null, in_bytes, cmd.syntax_only);
         },
         .stdin_super => {
-            var fr = std.fs.File.stdin().reader(&.{});
+            var fr = std.fs.File.stdin().reader(io, &.{});
             var aw: std.Io.Writer.Allocating = .init(gpa);
             _ = try fr.interface.streamRemaining(&aw.writer);
             const in_bytes = try aw.toOwnedSliceSentinel(0);

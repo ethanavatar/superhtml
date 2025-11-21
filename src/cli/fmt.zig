@@ -8,7 +8,7 @@ var bufout: [4096]u8 = undefined;
 var buferr: [4096]u8 = undefined;
 
 var syntax_errors = false;
-pub fn run(gpa: Allocator, args: []const []const u8) !noreturn {
+pub fn run(gpa: Allocator, io: std.Io, args: []const []const u8) !noreturn {
     // Prints html errors found in the document
     var stderr_writer = std.fs.File.stderr().writerStreaming(&buferr);
     const stderr = &stderr_writer.interface;
@@ -20,7 +20,7 @@ pub fn run(gpa: Allocator, args: []const []const u8) !noreturn {
     const cmd = Command.parse(args);
     switch (cmd.mode) {
         .stdin => |lang| {
-            var fr = std.fs.File.stdin().reader(&.{});
+            var fr = std.fs.File.stdin().reader(io, &.{});
             var aw: Writer.Allocating = .init(gpa);
             _ = try fr.interface.streamRemaining(&aw.writer);
             const in_bytes = try aw.toOwnedSliceSentinel(0);
